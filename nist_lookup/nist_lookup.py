@@ -68,7 +68,7 @@ def parse_table(text):
         cols = cols[:3] + [cols[-1]]
         table_row = []
         for cell in cols:
-            content = cell.find(text=True).replace("&nbsp;", "")
+            content = cell.find(text=True)
             table_row.append(content)
             table.append(table_row)
     return table
@@ -79,21 +79,22 @@ def calculate_coefficients(table, density):
     element and energy range (keV)
     calculates delta and beta with formula (1) in section 1.7 of the xray
     data booklet http://xdb.lbl.gov/"""
-    output_table = io.StringIO("""
-            #columns:
-            #energy (keV) (from NIST)
-            #f1 (e/atom) (from NIST)
-            #f2 (e/atom) (from NIST)
-            #wavelength (cm) (from NIST)
-            #delta (calculated)
-            #beta (calculated)
-            """)
+    output_table = io.StringIO()
+    print("""
+#columns:
+#energy (keV) (from NIST)
+#f1 (e/atom) (from NIST)
+#f2 (e/atom) (from NIST)
+#wavelength (cm) (from NIST)
+#delta (calculated)
+#beta (calculated)
+            """, file=output_table)
     #convert to cm to be consistent with the other NIST tables
     r_e = const.physical_constants["classical electron radius"][0] * 100
     factor = r_e / (2 * const.pi) * density
     for row in table:
         for column in row:
-            print(column, end=" ", file=output_table)
+            print(float(column), end="\t", file=output_table)
         f1 = float(row[1])
         f2 = float(row[2])
         wavelength = float(row[3]) * 1e-7
