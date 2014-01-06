@@ -4,4 +4,4 @@
 
 ## Parse the table and calculate beta and delta
 
-## Save the table in a csv file
+## Return the whitespace-separated table as a string
