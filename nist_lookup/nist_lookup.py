@@ -1,35 +1,41 @@
 #!/usr/bin/env python
 
-from scipy.constants import N_A, physical_constants, pi
-from string import Template
-from bs4 import BeautifulSoup
+"""Functions to download and parse the NIST database table with the form
+factors.
+
+"""
+
+import scipy.constants as const
 import urllib.request
+import io
+from bs4 import BeautifulSoup
 
 
 class NistPageError(Exception):
+    """Exception raised if the NIST website returns an error"""
     pass
 
 
-template_url = Template(
-    "http://physics.nist.gov/cgi-bin/ffast/ffast.pl?\
-Formula=$formula&gtype=4&range=S&lower=$min_energy\
-&upper=$max_energy&density=&frames=no&htmltable=1")
-
-
 def output_name(formula):
+    """Get name for the output file."""
     return "nist_table_{0}".format(formula)
 
 
 def download_page(formula, min_energy=10, max_energy=200):
-    url = template_url.safe_substitute(formula=formula,
-                                       min_energy=min_energy,
-                                       max_energy=max_energy)
+    """Download HTML page from the NIST database."""
+    url = "http://physics.nist.gov/cgi-bin/ffast/ffast.pl?\
+Formula={formula}&gtype=4&range=S&lower={min_energy}\
+&upper={max_energy}&density=&frames=no&htmltable=1".format(
+        formula=formula,
+        min_energy=min_energy,
+        max_energy=max_energy)
     page = urllib.request.urlopen(url)
     text = page.read().decode()
     return text
 
 
 def check_page(text):
+    """Check if the page is valid."""
     if "Error" in text:
         print(text)
         raise NistPageError("""Website error, check that the formula is
@@ -37,18 +43,20 @@ def check_page(text):
 
 
 def get_density(text):
+    """Return the number of atoms per unit volume (cm^3)"""
     for line in text.splitlines():
         if "Nominal density" in line:
             line = line.split()
             atomic_weight = float(line[0])
             density = float(line[-1])
             """convert to cm to be consistent with the other NIST tables"""
-            atoms_per_unit_volume = N_A * density / atomic_weight
+            atoms_per_unit_volume = const.N_A * density / atomic_weight
             break
     return atoms_per_unit_volume
 
 
 def parse_table(text):
+    """Parse the HTML table through the tags"""
     soup = BeautifulSoup(text)
     table = soup.find("table")
     rows = table.findAll("tr")
@@ -71,7 +79,7 @@ def calculate_coefficients(table, density):
     element and energy range (keV)
     calculates delta and beta with formula (1) in section 1.7 of the xray
     data booklet http://xdb.lbl.gov/"""
-    print("""
+    output_table = io.StringIO("""
             #columns:
             #energy (keV) (from NIST)
             #f1 (e/atom) (from NIST)
@@ -79,19 +87,28 @@ def calculate_coefficients(table, density):
             #wavelength (cm) (from NIST)
             #delta (calculated)
             #beta (calculated)
-
             """)
-
     #convert to cm to be consistent with the other NIST tables
-    r_e = physical_constants["classical electron radius"][0] * 1e2
-    factor = r_e / (2 * pi) * density
+    r_e = const.physical_constants["classical electron radius"][0] * 100
+    factor = r_e / (2 * const.pi) * density
     for row in table:
         for column in row:
-            print(column, end=" ")
+            print(column, end=" ", file=output_table)
         f1 = float(row[1])
         f2 = float(row[2])
         wavelength = float(row[3]) * 1e-7
         delta = factor * wavelength * wavelength * f1
         beta = factor * wavelength * wavelength * f2
-        print(delta, end=" ")
-        print(beta)
+        print(delta, end=" ", file=output_table)
+        print(beta, file=output_table)
+    return output_table.getvalue()
+
+
+def get_formatted_table(material, min_energy, max_energy):
+    """Compose the above functions."""
+    text = download_page(material, min_energy, max_energy)
+    check_page(text)
+    table = parse_table(text)
+    density = get_density(text)
+    formatted_table = calculate_coefficients(table, density)
+    return formatted_table

@@ -2,11 +2,7 @@
 
 import argparse
 
-from nist_lookup import download_page
-from nist_lookup import check_page
-from nist_lookup import parse_table
-from nist_lookup import get_density
-from nist_lookup import calculate_coefficients
+from nist_lookup.nist_lookup import get_formatted_table
 
 if __name__ == '__main__':
     commandline_parser = argparse.ArgumentParser(
@@ -17,10 +13,6 @@ if __name__ == '__main__':
         wavelength, delta and beta.
         ''',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    commandline_parser.add_argument('--folder', '-f', metavar='FOLDER',
-                                    nargs='?', default="nist",
-                                    help='''folder where the nist database
-                                    files will be stored''')
     commandline_parser.add_argument('material', metavar='MATERIAL',
                                     nargs='?', default="Au",
                                     help='material (symbol)')
@@ -30,10 +22,7 @@ if __name__ == '__main__':
     commandline_parser.add_argument('--max_energy', metavar='MAX_ENERGY',
                                     nargs='?', type=float, default=200,
                                     help='maximum energy (keV)')
-
     args = commandline_parser.parse_args()
-    text = download_page(args.material)
-    check_page(text)
-    table = parse_table(text)
-    density = get_density(text)
-    calculate_coefficients(table, density)
+    table = get_formatted_table(args.material,
+                                args.min_energy, args.max_energy)
+    print(table)
