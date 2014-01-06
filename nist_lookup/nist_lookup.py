@@ -2,12 +2,16 @@
 
 from scipy.constants import N_A, physical_constants, pi
 from string import Template
-from BeautifulSoup import BeautifulSoup
+from bs4 import BeautifulSoup
 import os
 import urllib
 import math
+import argparse
 
-template_url = Template("http://physics.nist.gov/cgi-bin/ffast/ffast.pl?Formula=$formula&gtype=4&range=S&lower=$min_energy&upper=$max_energy &density=&frames=no&htmltable=1")
+template_url = Template(
+    "http://physics.nist.gov/cgi-bin/ffast/ffast.pl?\
+    Formula=$formula&gtype=4&range=S&lower=$min_energy\
+    &upper=$max_energy &density=&frames=no&htmltable=1")
 
 
 def output_name(formula):
@@ -63,16 +67,16 @@ class ScatteringFactorTable(object):
         elif os.path.exists(folder) and not os.path.isdir(folder):
             raise OSError("{0} is a file, not a folder!".format(
                 folder))
-        self.file_name = os.path.join(folder,
-                                      "refraction_index_{0}_{1}_{2}".format(
-                                              self.element_Z,
-                                              self.min_energy,
-                                              self.max_energy))
+        self.file_name = os.path.join(
+            folder,
+            "refraction_index_{0}_{1}_{2}".format(
+                self.element_Z,
+                self.min_energy,
+                self.max_energy))
         self.url = template_url.safe_substitute(
-                Z=element_Z,
-                lower_energy=min_energy,
-                upper_energy=max_energy
-        )
+            Z=element_Z,
+            lower_energy=min_energy,
+            upper_energy=max_energy)
 
     def get_density(self, text):
         for line in text.split("\n"):
@@ -93,7 +97,8 @@ class ScatteringFactorTable(object):
         self.table = []
         for row in rows:
             cols = row.findAll("td")
-            if not cols: continue
+            if not cols:
+                continue
             cols = cols[:3] + [cols[-1]]
             table_row = []
             for cell in cols:
@@ -131,18 +136,18 @@ class ScatteringFactorTable(object):
                     print(beta, file=out_file)
 
 if __name__ == '__main__':
-    import sys
-    import periodic_table
-    import argparse
 
-    commandline_parser = argparse.ArgumentParser(description='''
-                                                 Download a table from the NIST for a material (only pure
-                                                 materials) and save it as a table with energy, f1, f2,
-                                                 wavelength, delta and beta.
-                                                 ''',
-                                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    commandline_parser = argparse.ArgumentParser(
+        description='''
+        Download a table from the NIST
+        for a material (only pure
+        materials) and save it as a table with energy, f1, f2,
+        wavelength, delta and beta.
+        ''',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     commandline_parser.add_argument('--folder', '-f', metavar='FOLDER',
-                                    nargs='?', default="nist", help='''folder where the nist database
+                                    nargs='?', default="nist",
+                                    help='''folder where the nist database
                                     files will be stored''')
     commandline_parser.add_argument('material', metavar='MATERIAL',
                                     nargs='?', default="Au",
@@ -155,8 +160,9 @@ if __name__ == '__main__':
                                     help='maximum energy (keV)')
 
     args = commandline_parser.parse_args()
-    a = ScatteringFactorTable(args.material.capitalize(),
-                              args.min_energy,
-                              args.max_energy,
-                              args.folder)
-    a.save_table()
+    text = download_page(args.material)
+    table = get_table(text)
+    density = get_density(text)
+    print(text)
+    print(table)
+    print(density)
