@@ -1,8 +1,5 @@
 # pylint: disable=all
 
-from distribute_setup import use_setuptools
-use_setuptools()
-
 from setuptools import setup, find_packages
 from version import get_git_version
 from subprocess import check_output
@@ -13,15 +10,12 @@ setup(
     version=get_git_version(),
     packages=find_packages(exclude='test'),
     scripts=[
-        "bin/nist_lookup.py",
+        "bin/delta_beta_table.py",
     ],
 
     install_requires=[
-        'numpy==1.7.1',
-        'h5py==2.2.0',
-        'matplotlib==1.3.1',
-        'pypes==1.2',
-        'pypesvds==1.1.0',
+        'scipy==0.13.2',
+        'beautifulsoup4==4.3.2',
     ],
 
     package_data={
