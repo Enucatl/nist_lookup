@@ -5,7 +5,9 @@ factors.
 
 """
 
+import numpy as np
 import scipy.constants as const
+from scipy import interpolate
 import urllib.request
 import io
 from bs4 import BeautifulSoup
@@ -105,7 +107,7 @@ def calculate_coefficients(table, density):
     return output_table.getvalue()
 
 
-def get_formatted_table(material, min_energy, max_energy):
+def get_formatted_table(material, min_energy=9, max_energy=210):
     """Compose the above functions."""
     text = download_page(material, min_energy, max_energy)
     check_page(text)
@@ -113,3 +115,19 @@ def get_formatted_table(material, min_energy, max_energy):
     density = get_density(text)
     formatted_table = calculate_coefficients(table, density)
     return formatted_table
+
+
+def get_graph_delta(table_raw):
+    """return the interpolated delta"""
+    table = np.loadtxt(table_raw)
+    energies = table[:, 0]
+    delta = table[:, 4]
+    return interpolate.interp1d(energies, delta)
+
+
+def get_graph_beta(table_raw):
+    """return the interpolated beta"""
+    table = np.loadtxt(table_raw)
+    energies = table[:, 0]
+    beta = table[:, 5]
+    return interpolate.interp1d(energies, beta)
