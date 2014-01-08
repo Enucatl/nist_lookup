@@ -119,15 +119,15 @@ def get_formatted_table(material, min_energy=9, max_energy=210):
 
 def get_graph_delta(table_raw):
     """return the interpolated delta"""
-    table = np.loadtxt(table_raw)
+    table = np.loadtxt(table_raw, usecols=(0, 4))
     energies = table[:, 0]
-    delta = table[:, 4]
+    delta = table[:, 1]
     return interpolate.interp1d(energies, delta)
 
 
 def get_graph_beta(table_raw):
     """return the interpolated beta"""
-    table = np.loadtxt(table_raw)
+    table = np.loadtxt(table_raw, usecols=(0, 5))
     energies = table[:, 0]
-    beta = table[:, 5]
+    beta = table[:, 1]
     return interpolate.interp1d(energies, beta)
