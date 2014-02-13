@@ -131,3 +131,24 @@ def get_graph_beta(table_raw):
     energies = table[:, 0]
     beta = table[:, 1]
     return interpolate.interp1d(energies, beta)
+
+
+def get_graph_from_table(col_x, col_y):
+    "dynamically generated tables"
+    def get_graph(raw_table):
+        "get columns from table"
+        table = np.loadtxt(raw_table, usecols=(col_x, col_y))
+        x = table[:, 0]
+        y = table[:, 1]
+        return interpolate.interp1d(x, y)
+    return get_graph
+
+
+nist_columns = {
+    "energy": 0,
+    "f1": 1,
+    "f2": 2,
+    "wavelength": 3,
+    "delta": 4,
+    "beta": 5
+}
