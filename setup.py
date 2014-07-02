@@ -14,8 +14,8 @@ setup(
     ],
 
     install_requires=[
-        'scipy==0.13.2',
-        'beautifulsoup4==4.3.2',
+        'scipy',
+        'beautifulsoup4',
     ],
 
     package_data={
