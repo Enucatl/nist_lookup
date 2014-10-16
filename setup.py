@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="nist_lookup",
-    version="v2.00",
+    version="v2.01",
     packages=find_packages(exclude='test'),
     scripts=[
     ],
