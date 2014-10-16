@@ -1,13 +1,11 @@
 # pylint: disable=all
 
 from setuptools import setup, find_packages
-from version import get_git_version
-from subprocess import check_output
 
 
 setup(
     name="nist_lookup",
-    version=get_git_version(),
+    version="v2.00",
     packages=find_packages(exclude='test'),
     scripts=[
         "bin/delta_beta_table.py",

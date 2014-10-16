@@ -1,9 +1,9 @@
 import sys
 from math import pi
 
-from physical_constants import R_ELECTRON_CM, AVOGADRO, PLANCK_HC
-from chemparser import chemparse
-from xraydb import xrayDB
+from nist_lookup.physical_constants import R_ELECTRON_CM, AVOGADRO, PLANCK_HC
+from nist_lookup.chemparser import chemparse
+from nist_lookup.xraydb import xrayDB
 
 '''
 Functions for accessing and using data from X-ray Databases and

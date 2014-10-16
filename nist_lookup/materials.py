@@ -1,8 +1,8 @@
 import os
 import numpy as np
 
-from xraydb_plugin import mu_elam, atomic_mass
-from chemparser import chemparse
+from nist_lookup.xraydb_plugin import mu_elam, atomic_mass
+from nist_lookup.chemparser import chemparse
 
 
 def get_materials():
