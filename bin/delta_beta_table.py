@@ -1,4 +1,4 @@
-"""Run a lookup on the NIST database"""
+"""Run a lookup on the NIST database and print the table"""
 
 import argparse
 
