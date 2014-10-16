@@ -1,7 +1,1 @@
-# Get a table from the NIST database
-
-## Download the web page and parse it with BeautifulSoup
-
-## Parse the table and calculate beta and delta
-
-## Return the whitespace-separated table as a string
+# NIST database data also supporting compounds from v2
