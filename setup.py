@@ -11,6 +11,8 @@ setup(
     ],
 
     install_requires=[
+        'sqlalchemy',
+        'numpy',
         'scipy',
         'beautifulsoup4',
     ],
