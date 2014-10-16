@@ -8,7 +8,6 @@ setup(
     version="v2.00",
     packages=find_packages(exclude='test'),
     scripts=[
-        "bin/delta_beta_table.py",
     ],
 
     install_requires=[

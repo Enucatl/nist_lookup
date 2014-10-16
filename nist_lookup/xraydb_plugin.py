@@ -464,3 +464,6 @@ def xray_delta_beta(material, density, energy, photo_only=False):
     if photo_only:
         beta = beta_photo * scale
     return delta, beta, lamb_cm/(4*pi*beta)
+
+if __name__ == '__main__':
+    print(xray_delta_beta('Fe2O3', 11, 1e4))

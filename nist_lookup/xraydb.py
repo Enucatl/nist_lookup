@@ -18,6 +18,7 @@ from sqlalchemy.pool import SingletonThreadPool
 # needed for py2exe?
 import sqlalchemy.dialects.sqlite
 
+
 def as_ndarray(obj):
     """make sure a float, int, list of floats or ints,
     or tuple of floats or ints, acts as a numpy array
@@ -26,9 +27,11 @@ def as_ndarray(obj):
         return np.array([obj])
     return np.asarray(obj)
 
+
 def make_engine(dbname):
     return create_engine('sqlite:///%s' % (dbname),
                          poolclass=SingletonThreadPool)
+
 
 def isxrayDB(dbname):
     """test if a file is a valid scan database:
@@ -45,15 +48,16 @@ def isxrayDB(dbname):
         meta = MetaData(engine)
         meta.reflect()
         result = all([t in meta.tables for t in _tables])
-    except:
-        pass
+    except Exception as e:
+        print(e)
     return result
+
 
 def json_encode(val):
     "simple wrapper around json.dumps"
     if val is None or isinstance(val, (str, unicode)):
         return val
-    return  json.dumps(val)
+    return json.dumps(val)
 
 
 def elam_spline(xin, yin, yspl_in, x):
@@ -61,8 +65,8 @@ def elam_spline(xin, yin, yspl_in, x):
     according to Elam, Numerical Recipes.  Calc borrowed from D. Dale.
     """
     x = as_ndarray(x)
-    x[np.where(x < min(xin))] =  min(xin)
-    x[np.where(x > max(xin))] =  max(xin)
+    x[np.where(x < min(xin))] = min(xin)
+    x[np.where(x > max(xin))] = max(xin)
 
     lo, hi = np.array([(np.flatnonzero(xin < e)[-1],
                         np.flatnonzero(xin > e)[0])
@@ -75,16 +79,19 @@ def elam_spline(xin, yin, yspl_in, x):
     b = (x - xin[lo]) / diff
     return (a * yin[lo] + b * yin[hi] +
             (diff*diff/6) * ((a*a - 1) * a * yspl_in[lo] +
-                             (b*b - 1) * b * yspl_in[hi] ))
+                             (b*b - 1) * b * yspl_in[hi]))
 
 
 class DBException(Exception):
     """DB Access Exception: General Errors"""
+
     def __init__(self, msg):
         Exception.__init__(self)
         self.msg = msg
+
     def __str__(self):
         return self.msg
+
 
 class _BaseTable(object):
     "generic class to encapsulate SQLAlchemy table"
@@ -92,55 +99,69 @@ class _BaseTable(object):
         el = getattr(self, 'element', '??')
         return "<%s(%s)>" % (self.__class__.__name__, el)
 
+
 class CosterKronigTable(_BaseTable):
     (id, element, initial_level, final_level,
      transition_probability, total_transition_probability) = [None]*6
 
+
 class ElementsTable(_BaseTable):
     (atomic_number, element, molar_mass, density) = [None]*4
+
 
 class PhotoAbsorptionTable(_BaseTable):
     (id, element, log_energy,
      log_photoabsorption, log_photoabsorption_spline) = [None]*5
+
 
 class ScatteringTable(_BaseTable):
     (id, element, log_energy,
      log_coherent_scatter, log_coherent_scatter_spline,
      log_incoherent_scatter, log_incoherent_scatter_spline) = [None]*7
 
+
 class XrayLevelsTable(_BaseTable):
     (id, element,  iupac_symbol,
      absorption_edge, fluorescence_yield, jump_ratio) = [None]*6
+
     def __repr__(self):
         el = getattr(self, 'element', '??')
-        edge= getattr(self, 'iupac_symbol', '??')
+        edge = getattr(self, 'iupac_symbol', '??')
         return "<%s(%s %s)>" % (self.__class__.__name__, el, edge)
+
 
 class XrayTransitionsTable(_BaseTable):
     (id, element, iupac_symbol, siegbahn_symbol, initial_level,
      final_level, emission_energy, intensity) = [None]*8
+
     def __repr__(self):
         el = getattr(self, 'element', '??')
         line = getattr(self, 'siegbahn_symbol', '??')
         return "<%s(%s %s)>" % (self.__class__.__name__, el, line)
 
+
 class WaasmaierTable(_BaseTable):
     (id, atomic_number, element, ion, offset, scale, exponents) = [None]*7
+
     def __repr__(self):
         el = getattr(self, 'ion', '??')
         return "<%s(%s)>" % (self.__class__.__name__, el)
 
+
 class KeskiRahkonenKrauseTable(_BaseTable):
     (id, atomic_number, element, edge, width) = [None]*5
+
     def __repr__(self):
         el = getattr(self, 'element', '??')
         edge = getattr(self, 'edge', '??')
         return "<%s(%s %s)>" % (self.__class__.__name__, el, edge)
 
+
 class ChantlerTable(_BaseTable):
     (id, element, sigma_mu, mue_f2, density,
      corr_henke, corr_cl35, corr_nucl,
      energy, f1, f2, mu_photo, mu_incoh, mu_total) = [None]*14
+
 
 class xrayDB(object):
     "interface to Xray Data"
@@ -153,22 +174,23 @@ class xrayDB(object):
                 raise IOError("Database '%s' not found!" % dbname)
 
         if not isxrayDB(dbname):
-            raise ValueError("'%s' is not a valid X-ray Database file!" % dbname)
+            raise ValueError(
+                "'%s' is not a valid X-ray Database file!" % dbname)
 
         self.dbname = dbname
         self.engine = make_engine(dbname)
         self.conn = self.engine.connect()
         kwargs = {}
         if read_only:
-            kwargs = {'autoflush': True, 'autocommit':False}
+            kwargs = {'autoflush': True, 'autocommit': False}
+
             def readonly_flush(*args, **kwargs):
                 return
             self.session = sessionmaker(bind=self.engine, **kwargs)()
             self.session.flush = readonly_flush
         else:
-            self.session = sessionmaker(bind=self.engine, **kwargs)()            
-            
-        self.metadata =  MetaData(self.engine)
+            self.session = sessionmaker(bind=self.engine, **kwargs)()
+        self.metadata = MetaData(self.engine)
         self.metadata.reflect()
         tables = self.tables = self.metadata.tables
         try:
@@ -184,7 +206,6 @@ class xrayDB(object):
         mapper(CosterKronigTable,        tables['Coster_Kronig'])
         mapper(PhotoAbsorptionTable,     tables['photoabsorption'])
         mapper(ScatteringTable,          tables['scattering'])
-
 
     def close(self):
         "close session"
@@ -210,9 +231,9 @@ class xrayDB(object):
         rows = self.query(WaasmaierTable)
         if element is not None:
             if isinstance(element, int):
-                rows = rows.filter(WaasmaierTable.atomic_number==element)
+                rows = rows.filter(WaasmaierTable.atomic_number == element)
             else:
-                rows = rows.filter(WaasmaierTable.element==element.title())
+                rows = rows.filter(WaasmaierTable.element == element.title())
         return [str(r.ion) for r in rows.all()]
 
     def f0(self, ion, q):
@@ -234,9 +255,9 @@ class xrayDB(object):
         tab = WaasmaierTable
         row = self.query(tab)
         if isinstance(ion, int):
-            row = row.filter(tab.atomic_number==ion).all()
+            row = row.filter(tab.atomic_number == ion).all()
         else:
-            row = row.filter(tab.ion==ion.title()).all()
+            row = row.filter(tab.ion == ion.title()).all()
         if len(row) > 0:
             row = row[0]
         if isinstance(row, tab):
@@ -253,9 +274,9 @@ class xrayDB(object):
         tab = ChantlerTable
         row = self.query(tab)
         if isinstance(element, int):
-            row = row.filter(tab.id==element).all()
+            row = row.filter(tab.id == element).all()
         else:
-            row = row.filter(tab.element==element.title()).all()
+            row = row.filter(tab.element == element.title()).all()
         if len(row) > 0:
             row = row[0]
         if isinstance(row, tab):
@@ -263,8 +284,8 @@ class xrayDB(object):
             emin, emax = min(energy), max(energy)
             # te = self.chantler_energies(element, emin=emin, emax=emax)
             te = np.array(json.loads(row.energy))
-            nemin = max(0, -5 + max(np.where(te<=emin)[0]))
-            nemax = min(len(te), 6 + max(np.where(te<=emax)[0]))
+            nemin = max(0, -5 + max(np.where(te <= emin)[0]))
+            nemax = min(len(te), 6 + max(np.where(te <= emax)[0]))
             region = np.arange(nemin, nemax)
             te = te[region]
             if column == 'mu':
@@ -274,8 +295,8 @@ class xrayDB(object):
                 out = UnivariateSpline(te, ty, s=smoothing)(energy)
             else:
                 out = np.exp(np.interp(np.log(energy),
-                                        np.log(te),
-                                        np.log(ty)))
+                                       np.log(te),
+                                       np.log(ty)))
             if isinstance(out, np.ndarray) and len(out) == 1:
                 return out[0]
             return out
@@ -294,9 +315,9 @@ class xrayDB(object):
         tab = ChantlerTable
         row = self.query(tab)
         if isinstance(element, int):
-            row = row.filter(tab.id==element).all()
+            row = row.filter(tab.id == element).all()
         else:
-            row = row.filter(tab.element==element.title()).all()
+            row = row.filter(tab.element == element.title()).all()
         if len(row) > 0:
             row = row[0]
         if not isinstance(row, tab):
@@ -308,13 +329,13 @@ class xrayDB(object):
         if emin <= min(te):
             nemin = 0
         else:
-            nemin = max(0,  -2 + max(np.where(te<=emin)[0]))
+            nemin = max(0,  -2 + max(np.where(te <= emin)[0]))
         if emax > max(te):
             nemax = len(te)
         else:
-            nemax = min(len(te), 2 + max(np.where(te<=emax)[0]))
+            nemax = min(len(te), 2 + max(np.where(te <= emax)[0]))
         region = np.arange(nemin, nemax)
-        return te[region] # , tf1[region], tf2[region]
+        return te[region]  # , tf1[region], tf2[region]
 
     def f1_chantler(self, element, energy, **kws):
         """returns f1 -- real part of anomalous x-ray scattering factor
@@ -348,10 +369,11 @@ class xrayDB(object):
         tab = ElementsTable
         row = self.query(tab)
         if isinstance(element, int):
-            row = row.filter(tab.atomic_number==element).all()
+            row = row.filter(tab.atomic_number == element).all()
         else:
-            row = row.filter(tab.element==element.title()).all()
-        if len(row) > 0: row = row[0]
+            row = row.filter(tab.element == element.title()).all()
+        if len(row) > 0:
+            row = row[0]
         return row
 
     def zofsym(self, element):
@@ -383,7 +405,7 @@ class xrayDB(object):
             element = self.symbol(element)
         tab = XrayLevelsTable
         out = {}
-        for r in self.query(tab).filter(tab.element==element.title()).all():
+        for r in self.query(tab).filter(tab.element == element.title()).all():
             out[str(r.iupac_symbol)] = (r.absorption_edge,
                                         r.fluorescence_yield,
                                         r.jump_ratio)
@@ -404,15 +426,17 @@ class xrayDB(object):
          value = (energy (in eV), intensity, initial_level, final_level)
 
         options:
-         initial_level:     limit output to an initial level(s) -- a string or list of strings
-         excitation_energy: limit output to those excited by given energy (in eV)
+         initial_level:     limit output to an initial level(s) --
+            a string or list of strings
+         excitation_energy: limit output to those
+            excited by given energy (in eV)
 
         Note that excitation energy will overwrite initial_level
         """
         if isinstance(element, int):
             element = self.symbol(element)
         tab = XrayTransitionsTable
-        row = self.query(tab).filter(tab.element==element.title())
+        row = self.query(tab).filter(tab.element == element.title())
         if excitation_energy is not None:
             initial_level = []
             for ilevel, dat in self.xray_edges(element).items():
@@ -423,7 +447,7 @@ class xrayDB(object):
             if isinstance(initial_level, (list, tuple)):
                 row = row.filter(tab.initial_level.in_(initial_level))
             else:
-                row = row.filter(tab.initial_level==initial_level.title())
+                row = row.filter(tab.initial_level == initial_level.title())
         out = {}
         for r in row.all():
             out[str(r.siegbahn_symbol)] = (r.emission_energy, r.intensity,
@@ -437,11 +461,11 @@ class xrayDB(object):
             element = self.symbol(element)
         tab = CosterKronigTable
         row = self.query(tab).filter(
-            tab.element==element.title()
+            tab.element == element.title()
             ).filter(
-            tab.initial_level==initial.title()
+            tab.initial_level == initial.title()
             ).filter(
-            tab.final_level==final.title()).all()
+            tab.final_level == final.title()).all()
         if len(row) > 0:
             row = row[0]
         if isinstance(row, tab):
@@ -460,11 +484,11 @@ class xrayDB(object):
         has_edge = edge is not None
         if has_elem:
             if isinstance(element, int):
-                rows = rows.filter(tab.atomic_number==element)
+                rows = rows.filter(tab.atomic_number == element)
             else:
-                rows = rows.filter(tab.element==element.title())
+                rows = rows.filter(tab.element == element.title())
         if has_edge:
-            rows = rows.filter(tab.edge==edge.title())
+            rows = rows.filter(tab.edge == edge.title())
         out = rows.all()
         if len(out) == 1:
             return(out[0].width)
@@ -497,7 +521,7 @@ class xrayDB(object):
         if kind == 'photo':
             tab = PhotoAbsorptionTable
 
-        row = self.query(tab).filter(tab.element==element.title()).all()
+        row = self.query(tab).filter(tab.element == element.title()).all()
         if len(row) > 0:
             row = row[0]
         if not isinstance(row, tab):
@@ -543,7 +567,7 @@ class xrayDB(object):
             xsec += calc(element, energies, kind='incoh')
 
         return xsec
-    
+
     def coherent_cross_section_elam(self, element, energies):
         """returns coherenet scattering cross section for an element
         at energies (in eV)
