@@ -216,6 +216,107 @@ class xrayDB(object):
         "generic query"
         return self.session.query(*args, **kws)
 
+    def atomic_number(self, element):
+        "return z for element name"
+        return int(self._getElementData(element).atomic_number)
+
+    def atomic_symbol(self, z):
+        "return element symbol from z"
+        return self._getElementData(z).element
+
+    def atomic_mass(self, element):
+        "return molar mass (amu) from element symbol or atomic number"
+        if isinstance(element, int):
+            element = atomic_symbol(element)
+        return self._getElementData(element).molar_mass
+
+    def atomic_density(self, element):
+        "return density (gr/cm^3) from element symbol or atomic number"
+        if isinstance(element, int):
+            element = atomic_symbol(element)
+        return self._getElementData(element).density
+
+    def chantler_data(self, element, energy, column, **kws):
+        """returns data from Chantler tables.
+
+        arguments
+        ---------
+        element:  atomic number, atomic symbol for element
+        energy:   energy or array of energies in eV
+        column:   one of 'f1', 'f2', 'mu_photo', 'mu_incoh', 'mu_total'
+        """
+        return self._getChantler(element, energy, column=column, **kws)
+
+    def f1_chantler(self, element, energy, **kws):
+        """returns real part of anomalous x-ray scattering factor for
+        a selected element and input energy (or array of energies) in eV.
+        Data is from the Chantler tables.
+
+        Values returned are in units of electrons
+
+        arguments
+        ---------
+        element:  atomic number, atomic symbol for element
+        energy:   energy or array of energies in eV
+        """
+        return self._getChantler(element, energy, column='f1', **kws)
+
+    def f2_chantler(self, element, energy):
+        """returns imaginary part of anomalous x-ray scattering factor for
+        a selected element and input energy (or array of energies) in eV.
+        Data is from the Chantler tables.
+
+        Values returned are in units of electrons.
+
+        arguments
+        ---------
+        element:  atomic number, atomic symbol for element
+        energy:   energy or array of energies in eV
+        """
+        return self._getChantler(element, energy, column='f2')
+
+    def mu_chantler(self, element, energy, incoh=False, photo=False):
+        """returns x-ray mass attenuation coefficient, mu/rho, for a
+        selected element and input energy (or array of energies) in eV.
+        Data is from the Chantler tables.
+
+        Values returned are in units of cm^2/gr.
+
+        arguments
+        ---------
+        element:  atomic number, atomic symbol for element
+        energy:   energy or array of energies in eV
+        photo=True: flag to return only the photo-electric contribution
+        incoh=True: flag to return only the incoherent contribution
+
+        The default is to return total attenuation coefficient.
+        """
+        col = 'mu_total'
+        if photo:
+            col = 'mu_photo'
+        if incoh:
+            col = 'mu_incoh'
+        return self._getChantler(element, energy, column=col)
+
+    def mu_elam(element, energy, kind='total'):
+        """returns x-ray mass attenuation coefficient, mu/rho, for a
+        selected element and input energy (or array of energies) in eV.
+        Data is from the Elam tables.
+
+        Values returned are in units of cm^2/gr.
+
+        arguments
+        ---------
+        element:  atomic number, atomic symbol for element
+        energy:   energy or array of energies in eV
+        kind:     one of 'total' (default) 'photo', 'coh', and 'incoh' for
+                total, photo-absorption, coherent scattering, and
+                incoherent scattering cross sections, respectively.
+
+        Data from Elam, Ravel, and Sieber.
+        """
+        return self.mu_elam(element, energy, kind=kind)
+
     def f0_ions(self, element=None):
         """return list of ion names supported for the .f0() calculation
         from Waasmaier and Kirfel
