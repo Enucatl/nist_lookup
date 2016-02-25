@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="nist_lookup",
-    version="v2.01",
+    version="v2.11",
     packages=find_packages(exclude='test'),
     scripts=[
     ],
@@ -29,6 +29,6 @@ setup(
     license="GNU GPL 3",
     keywords="",
     # project home page, if any
-    url="https://bitbucket.org/psitomcat/nist_lookup",
+    url="https://git.psi.ch/tomcat/nist_lookup",
     # could also include long_description, download_url, classifiers, etc.
 )
